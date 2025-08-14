@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Employee Check-in App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <h1>ระบบเช็คอินพนักงาน</h1>
+    
+    <div class="employee-info">
+      <p>ชื่อพนักงาน: <span id="employee-name">สมชาย</span></p>
+      <p>รหัสพนักงาน: <span id="employee-id">001</span></p>
+    </div>
+
+    <div class="check-buttons">
+      <button id="check-in-btn">เช็คอิน</button>
+      <button id="check-out-btn">เช็คเอาท์</button>
+    </div>
+
+    <div class="status-display">
+      <p id="status-message"></p>
+    </div>
+
+    <div class="history-section">
+      <h2>ประวัติการเข้างาน</h2>
+      <ul id="history-list">
+        </ul>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #f0f2f5;
+}
+
+.container {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.check-buttons button {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  color: white;
+}
+
+#check-in-btn {
+  background-color: #4CAF50; /* Green */
+}
+
+#check-out-btn {
+  background-color: #f44336; /* Red */
+}
+
+/* Add more styling for other elements */
+document.addEventListener('DOMContentLoaded', () => {
+  const checkInBtn = document.getElementById('check-in-btn');
+  const checkOutBtn = document.getElementById('check-out-btn');
+  const statusMessage = document.getElementById('status-message');
+  const historyList = document.getElementById('history-list');
+
+  const regularTime = '08:30:00'; // Define regular check-in time
+
+  // Load history from Local Storage
+  const loadHistory = () => {
+    const history = JSON.parse(localStorage.getItem('attendanceHistory')) || [];
+    historyList.innerHTML = '';
+    history.forEach(record => {
+      const li = document.createElement('li');
+      li.textContent = `${record.date} - ${record.type} at ${record.time} (${record.status})`;
+      historyList.appendChild(li);
+    });
+  };
+
+  checkInBtn.addEventListener('click', () => {
+    const now = new Date();
+    const time = now.toTimeString().split(' ')[0];
+    const date = now.toLocaleDateString();
+    
+    let status = 'ตรงเวลา';
+    if (time > regularTime) {
+      status = 'มาสาย';
+      // Implement late count logic here
+    }
+
+    // Save data to Local Storage
+    const newRecord = { date, time, type: 'เช็คอิน', status };
+    const history = JSON.parse(localStorage.getItem('attendanceHistory')) || [];
+    history.push(newRecord);
+    localStorage.setItem('attendanceHistory', JSON.stringify(history));
+
+    statusMessage.textContent = `เช็คอินสำเร็จ! เวลา ${time}`;
+    loadHistory();
+    checkLateAlert();
+  });
+
+  // Check-out logic is similar, but records "เช็คเอาท์"
+
+  const checkLateAlert = () => {
+    // This is a simple example. A full implementation would need to parse dates and count per month.
+    const history = JSON.parse(localStorage.getItem('attendanceHistory')) || [];
+    const lateCount = history.filter(record => record.status === 'มาสาย').length;
+    
+    if (lateCount >= 3) {
+      alert(`⚠️ คุณมาสายเกิน 3 ครั้งในเดือนนี้! โปรดปรับปรุง.`);
+    }
+  };
+
+  // Job completion reminder
+  const workEndReminder = () => {
+    const now = new Date();
+    const workEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0); // 17:00
+    const timeUntilEnd = workEndTime.getTime() - now.getTime();
+    
+    if (timeUntilEnd > 0 && timeUntilEnd < 15 * 60 * 1000) { // 15 minutes before end
+      alert('🔔 เตือน: ใกล้เวลาเลิกงานแล้ว! อย่าลืมเคลียร์งานให้เสร็จ');
+    }
+  };
+
+  setInterval(workEndReminder, 60 * 1000); // Check every minute
+  loadHistory();
+});
